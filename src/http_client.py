@@ -38,7 +38,7 @@ class HttpClient:
                 print(f"Optimized_loss: {optimized_loss}")
                 optimized_pose = np.frombuffer(
                     optimized_pose, dtype=np.float32).reshape(4, 4)
-                return optimized_pose
+                return optimized_pose, trajectory
             elif response_data['status'] in ['not found', 'failed']:
                 raise Exception(
                     f'Failed to get result: {response_data["status"]}')

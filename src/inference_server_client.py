@@ -5,7 +5,7 @@ from typing import List, Dict
 import time
 from omegaconf import OmegaConf, DictConfig
 
-from http_client import HttpClient
+from .http_client import HttpClient
 
 
 class InferenceServerClient:
@@ -20,7 +20,8 @@ class InferenceServerClient:
                       camera_pose_htms: List[npt.NDArray[np.float32]],
                       camera_instrinsics: List[npt.NDArray[np.float32]],
                       optimization_config: DictConfig,
-                      text_query: str = "Pick up something please") -> npt.NDArray[np.float32]:
+                      text_query: str = "Pick up something please",
+                      reset_optimizer: bool = True) -> npt.NDArray[np.float32]:
 
         observations = self._construct_observation_dict(
             camera_color_imgs, camera_pose_htms, camera_instrinsics)
@@ -31,14 +32,14 @@ class InferenceServerClient:
             'text': text_query,
             'optimizer_name': "language_1_view",
             'return_trajectory': True,
-            'reset_optimizer': True
+            'reset_optimizer': reset_optimizer
         }
         request_id = self.http_client.submit_task('/optimize_poses', payload)
-        optimized_pose = None
-        while optimized_pose is None:
+        result = None
+        while result is None:
             time.sleep(0.2)
-            optimized_pose = self.http_client.get_result(request_id)
-        return optimized_pose
+            result = self.http_client.get_result(request_id)
+        return result[0], result[1]  # op_pose, trajectory
 
     def _construct_observation_dict(self, camera_color_imgs, camera_pose_htms, camera_instrinsics) -> List[Dict]:
         assert all(len(lst) == len(camera_color_imgs)
